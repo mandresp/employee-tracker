@@ -138,5 +138,15 @@ function addRole() {
 }
 
 function addDepartment() {
-
+    inquirer.prompt({
+            name: "deptName",
+            type: "input",
+            message: "Department Name: "
+        }).then((answer) => {
+            connection.query(`INSERT INTO department (name)VALUES ("${answer.deptName}");`, (err, res) => {
+                if(err) return err;
+                console.log("\n Department Added \n ");
+                mainMenu();
+            });
+        });
 }
