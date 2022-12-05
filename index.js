@@ -1,8 +1,8 @@
 // These are my required packages
 const mysql = require("mysql2");
 const inquirer = require("inquirer");
-require('console.table');
-const utils = require('util')
+require("console.table");
+const utils = require("util")
 
 // This is my connection to my database
 var connection = mysql.createConnection({
@@ -19,20 +19,20 @@ var showEmployees;
 
 // This is the function that will start the application
 connection.connect(function (err) {
-  if (err) throw err;
-  // This function will show all the roles while retaining the id as its value
-  connection.query("SELECT * from role", function (error, res) {
-    showRoles = res.map(role => ({ name: role.title, value: role.id }))
-  })
-  // This function will show all the departments while retaining the id as its value
-  connection.query("SELECT * from department", function (error, res) {
-    showDepartments = res.map(department => ({ name: department.name, value: department.id }))
-  })
-  // This function will show all the employees while retaining the id as its value
-  connection.query("SELECT * from employee", function (error, res) {
-    showEmployees = res.map(employee => ({ name: `${employee.first_name} ${employee.last_name}`, value: employee.id }))
-  })
-  startPrompt();
+    if (err) throw err;
+    // This function will show all the roles
+    connection.query("SELECT * from role", function (error, res) {
+        showRoles = res.map(role => ({ name: role.title, value: role.id }))
+    })
+    // This function will show all the departments
+    connection.query("SELECT * from department", function (error, res) {
+        showDepartments = res.map(department => ({ name: department.name, value: department.id }))
+    })
+    // This function will show all the employees
+    connection.query("SELECT * from employee", function (error, res) {
+        showEmployees = res.map(employee => ({ name: `${employee.first_name} ${employee.last_name}`, value: employee.id }))
+    })
+    startPrompt();
 });
 
 connection.query = utils.promisify(connection.query)
@@ -42,19 +42,18 @@ function startPrompt() {
     inquirer.prompt([
     {
     type: "list",
-    message: "What would you like to do?",
     name: "choice",
-    choices: [
-              "View all employees", 
-              "View roles",
-              "View departments", 
-              "Update employee",
-              "Add employee",
-              "Add role",
-              "Add department"
-            ]
-    }
-    ]).then(function(value) {
+    choices: 
+    [
+        "View all employees", 
+        "View roles",
+        "View departments", 
+        "Update employee role",
+        "Add employee",
+        "Add role",
+        "Add department"
+    ]
+    }]).then(function(value) {
         // This is a switch case that will run the corresponding function for the user's choice
         switch (value.choice) {
             case "View all employees":
@@ -69,8 +68,8 @@ function startPrompt() {
             case "Add employee":
                 addEmployee();
             break;
-            case "Update employee":
-                updateEmployee();
+            case "Update employee role":
+                updateEmployeeRole();
             break;
             case "Add role":
                 addRole();
@@ -153,8 +152,33 @@ function addEmployee() {
     });
 }
 
-function updateEmployee() {
-
+// This function allows us to update an employee's role
+function updateEmployeeRole() {
+    inquirer.prompt([
+        {
+            name: "employee",
+            type: "list",
+            message: "Which employee would you like to update?",
+            choices: showEmployees
+        }
+    ]).then((answer) => {
+        let employee = answer.employee;
+        inquirer.prompt([
+            {
+                name: "role",
+                type: "list",
+                message: "What is the employee's new role?",
+                choices: showRoles
+            }
+        ]).then((answer) => {
+            let role = answer.role;
+            connection.query(`UPDATE employee SET role_id = ${role} WHERE id = ${employee}`, (err, res) => {
+                if(err) return err;
+                console.log("\n Employee Updated \n ");
+                startPrompt();
+            });
+        });
+    });
 }
 
 // This function will add a role to the database
@@ -166,18 +190,18 @@ function addRole() {
             message: "Role Name: "
         },
         {
-            name: "salary",
+            name: "roleSalary",
             type: "input",
             message: "Salary: "
         },
         {
-            name: "dept",
+            name: "roleDept",
             type: "list",
             message: "Please select the department: ",
             choices: showDepartments
         }
     ]).then((answer) => {
-        connection.query(`INSERT INTO role (title, salary, department_id)VALUES ("${answer.roleName}", "${answer.salary}", "${answer.dept}");`, (err, res) => {
+        connection.query(`INSERT INTO role (title, salary, department_id)VALUES ("${answer.roleName}", "${answer.roleSalary}", "${answer.roleDept}");`, (err, res) => {
             if(err) return err;
             console.log("\n Role Added \n ");
             startPrompt();
